@@ -16,6 +16,7 @@ Code quality pass?               -> /code-sweep (review + fix structural, ticket
 Code review (with tracking)?     -> /panel-review -> /panel-fix PT-xxx (repeat)
 Code review (quick, no tracking)?-> /code-review
 Parallel feature sprint?         -> /batch-dev (Panel Todo coordination)
+Autonomous background loop?      -> /auto-dev (cron-driven, picks auto-ok tasks)
 Just researching?                -> /explore
 Sprint prep?                     -> /sprint-planning (tickets + Panel Todo)
 Architecture analysis?           -> /architect-review design | review
@@ -54,6 +55,9 @@ Need architecture analysis?
 Ready to commit and push?
 |-- Yes -> /pre-push (build, lint, test, fix)
 |
+Want autonomous background work?
+|-- Yes -> /loop 20m /auto-dev (cron picks auto-ok tasks)
+|
 Need to change code?
 |-- Cleanup/refactor? -> /refactor
 |-- Parallel multi-track? -> /batch-dev
@@ -75,6 +79,7 @@ Need to change code?
 | `/panel-fix` | Multi-file | Yes | Optional | Panel Todo (completes) |
 | `/feature-design` | Read-only | No | Required (strategy+arch) | None |
 | `/code-sweep` | Any | Structural only | Required (reviewer+refactorer) | Panel Todo (behavioral) |
+| `/auto-dev` | Any | Yes | No | Ticket tracker (`auto-ok` label) |
 | `/pre-push` | Any (fix lint/tests) | Yes | No | None |
 | `/refactor` | Any | No | Required | Optional |
 | `/fix` | Any | No | Required | Optional |
@@ -127,6 +132,7 @@ Need to change code?
 | `/batch-dev` | **Panel Todo** (sprint coordination) |
 | `/sprint-planning` | **Ticket tracker** (Jira/Linear) + **Panel Todo** |
 | `/dev`, `/fix` | **Ticket tracker** (optional) |
+| `/auto-dev` | **Ticket tracker** (task picking + claiming) |
 | `/architect-review` | **Axon** (knowledge graph) |
 | `/explore` | **Context7** (library docs) |
 
@@ -153,6 +159,8 @@ Need to change code?
 /explore                                  # Research only
 /docs                                     # Documentation changes
 /pre-push                                 # Pre-push validation
+/auto-dev                                 # One autonomous cycle (pick + implement + commit)
+/loop 20m /auto-dev                       # Start autonomous loop (every 20 min)
 ```
 
 ---
@@ -207,4 +215,5 @@ Agents read these before implementing. See `.claude/contexts/README.md` for the 
 - **Bug hotfix**: `/quick-fix` or `/fix` -> `/pre-push` -> push
 - **Quality pipeline**: `/code-sweep` -> `/panel-fix PT-xxx` (behavioral) -> `/pre-push`
 - **Code review sprint**: `/panel-review` -> `/panel-fix PT-1` -> `/panel-fix PT-2` -> ...
+- **Autonomous loop**: `/loop 20m /auto-dev` (cron picks `auto-ok` tasks, implements, commits)
 - **Exploration**: `/explore` -> decide next step

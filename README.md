@@ -54,9 +54,10 @@ From lightest to heaviest:
 | `/batch-dev` | Any | No | Required | Parallel multi-session development |
 | `/sprint-planning` | Read-only | No | Design only | Sprint prep (stories + execution tasks) |
 | `/architect-review` | Read-only | No | Analysis only | Architecture analysis via Axon |
+| `/auto-dev` | Any | Yes | No | Autonomous cron loop — picks tasks, implements, commits |
 | `/pre-push` | Any | Yes | No | Pre-push validation |
 
-**The key insight**: Most work is `/quick-fix`. Reserve agent pipelines for genuinely complex work.
+**The key insight**: Most work is `/quick-fix`. Reserve agent pipelines for genuinely complex work. Use `/auto-dev` to grind through a backlog of well-specified tasks overnight.
 
 ---
 
@@ -211,6 +212,127 @@ For projects with complex module boundaries, the `/architect-review` workflow us
 /quick-fix (clear, 1-2 files) -> /pre-push -> push
 /fix (complex, needs investigation) -> /pre-push -> push
 ```
+
+### Autonomous Loop (Overnight / Background)
+
+```
+/loop 20m /auto-dev                <- start cron loop
+    |
+    |-- Every 20 minutes:
+    |   1. Query ticket tracker for tasks labeled "auto-ok"
+    |   2. Claim first available (atomic transition to "In Progress")
+    |   3. Safety check (scope, sensitivity, clear criteria)
+    |   4. Implement directly (no plan mode, no agents)
+    |   5. Run tests
+    |   6. Commit (never push)
+    |   7. Update ticket with results
+    |   8. STOP — wait for next cycle
+    |
+    |-- On failure:
+        Comment on ticket, remove label, move on
+```
+
+---
+
+## Autonomous Development Loop (`/auto-dev`)
+
+The most opinionated workflow in the system. Claude picks up tasks from your ticket tracker and implements them without human approval gates.
+
+### Why This Exists
+
+You label tickets with `auto-ok` when the spec is clear enough that a developer wouldn't need to ask questions. Claude runs on a timer, picks the next one, implements it, runs tests, commits (never pushes), and comments on the ticket with results. You review the commits when you're ready.
+
+### The Workflow
+
+```
+┌─────────────────────────────────────────────────────┐
+│ /auto-dev (one cycle)                               │
+│                                                     │
+│ 1. PICK & CLAIM                                     │
+│    Query: status="To Do" AND labels="auto-ok"       │
+│    Fetch 5 candidates (batch for contention)        │
+│    Claim via status transition (atomic lock)         │
+│    If claimed by another session → try next          │
+│                                                     │
+│ 2. SAFETY CHECK                                     │
+│    ✓ Clear acceptance criteria?                      │
+│    ✓ Not billing/finance/GDPR/auth?                  │
+│    ✓ No data-destructive migrations?                 │
+│    ✓ No breaking API changes?                        │
+│    ✗ Any fail → comment, remove label, STOP          │
+│                                                     │
+│ 3. PREFLIGHT                                        │
+│    Read existing code, check for conflicts           │
+│    Verify clean working tree                         │
+│                                                     │
+│ 4. IMPLEMENT                                        │
+│    Direct edits (no plan mode, no agents)            │
+│    Follow existing patterns                          │
+│                                                     │
+│ 5. VERIFY                                           │
+│    Run tests (max 2 retries on failure)              │
+│                                                     │
+│ 6. COMMIT (never push)                              │
+│    Conventional commit message + ticket reference    │
+│                                                     │
+│ 7. COMPLETE                                         │
+│    Comment on ticket: files, tests, commit hash      │
+│    Transition to Done                                │
+│    STOP — wait for next cron fire                    │
+└─────────────────────────────────────────────────────┘
+```
+
+### Escape Hatches
+
+The loop is designed to fail safely. When anything unexpected happens, it stops and comments:
+
+| Situation | Action |
+|-----------|--------|
+| No tasks available | Stop, do nothing |
+| Task is bigger than expected | Stop, comment, remove `auto-ok` label |
+| Needs design decision | Stop, comment, add `needs-input` label |
+| Tests fail after 2 retries | Commit partial, comment, leave In Progress |
+| Touches sensitive code | Stop, comment, remove `auto-ok` label |
+| Build/test infra down | Stop, retry next cycle |
+| All tasks claimed by other sessions | Stop (normal in multi-session) |
+
+### Multi-Session Safety
+
+Multiple `/auto-dev` loops can run concurrently. The ticket tracker status transition acts as an atomic claim — only one session can move a ticket from "To Do" to "In Progress". If another session claimed it between your query and your transition attempt, you skip to the next candidate.
+
+### Labeling Tasks
+
+A task gets `auto-ok` when it meets ALL of these:
+
+- Clear acceptance criteria (testable)
+- The "what" is fully specified (not just the "why")
+- No design decisions needed
+- Not in a sensitive domain (billing, auth, GDPR)
+- No data-destructive migrations
+
+### Integration with Cron
+
+Use Claude Code's `/loop` command to schedule:
+
+```
+/loop 20m /auto-dev     # Every 20 minutes
+/loop 30m /auto-dev     # Every 30 minutes
+/loop 1h /auto-dev      # Every hour
+```
+
+The cron job only fires while the session is idle. If you're talking to Claude, the cycle waits.
+
+### Design Decisions
+
+**Why no plan mode?** Tasks are pre-planned by their ticket description. The `auto-ok` label IS the plan approval.
+
+**Why no agents?** Speed and simplicity. Agent chains add overhead that's unnecessary for well-specified tasks.
+
+**Why never push?** Human always reviews before code reaches the remote. This is the safety net — Claude can implement all day, but nothing ships without your approval.
+
+**Why remove the label on escalation?** Prevents the loop from retrying the same stuck task every cycle.
+
+**Why batch-fetch 5 candidates?** In multi-session setups, the first candidate might be claimed by another session between your query and your claim attempt. Fetching 5 gives you fallbacks without additional API calls.
 
 ---
 

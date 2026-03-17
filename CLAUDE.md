@@ -16,6 +16,7 @@ Start work with the appropriate workflow skill:
 | `/fix` | Complex bug fixes (needs investigation) | Yes |
 | `/refactor` | Code cleanup, tech debt | Yes |
 | `/quick-fix` | Direct fixes (bugs, small refactors, up to 2 files) | No (optional) |
+| `/auto-dev` | Autonomous loop — picks `auto-ok` tasks, implements, commits (no push) | No |
 | `/code-review` | Code review with severity classification | No (optional) |
 | `/docs` | Documentation only | No |
 | `/explore` | Research only (no implementation) | No |
