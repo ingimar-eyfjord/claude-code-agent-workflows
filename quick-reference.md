@@ -120,6 +120,8 @@ Need to change code?
 | `security-reviewer` | opus | Security audit |
 | `infra-ops` | opus | Docker, CI/CD, deploy |
 | `design-reviewer` | sonnet | UI/UX, accessibility |
+| `product-strategy-advisor` | opus | Product strategy, build/kill/enhance |
+| `architecture-tester` | opus | Architecture fitness tests, trends |
 
 ---
 

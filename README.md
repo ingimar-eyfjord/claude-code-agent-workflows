@@ -1,6 +1,6 @@
 # Claude Code Agents & Workflows
 
-A production-tested system of specialized agents, workflow skills, and enforcement hooks for Claude Code. Battle-tested on a real B2B SaaS product with 18 agents and 16 workflows.
+A production-tested system of specialized agents, workflow skills, and enforcement hooks for Claude Code. Battle-tested on a real B2B SaaS product, distilled into 12 generic agents and 17 workflows you can drop into any project.
 
 ## Philosophy
 
@@ -16,8 +16,8 @@ Based on [Anthropic's agent-building guidance](https://docs.anthropic.com/en/doc
 
 ```
 .claude/
-  agents/           # 10 specialized agents (architect, backend, frontend, etc.)
-  skills/           # 16 workflow skills (see Workflow Ladder below)
+  agents/           # 12 specialized agents (architect, backend, frontend, etc.)
+  skills/           # 17 workflow skills (see Workflow Ladder below)
   contexts/         # Context document pattern (README + template)
 CLAUDE.md           # Template project instructions
 quick-reference.md  # Cheat sheet for workflow selection
@@ -336,7 +336,7 @@ The cron job only fires while the session is idle. If you're talking to Claude, 
 
 ---
 
-## Agent Roster (10 agents)
+## Agent Roster (12 agents)
 
 | Agent | Model | Role |
 |-------|-------|------|
@@ -350,6 +350,8 @@ The cron job only fires while the session is idle. If you're talking to Claude, 
 | `security-reviewer` | opus | Security audit, OWASP, data protection |
 | `infra-ops` | opus | Docker, CI/CD, deployment |
 | `design-reviewer` | sonnet | UI/UX review, accessibility, responsiveness |
+| `product-strategy-advisor` | opus | Product strategy, build/kill/enhance (ICE framework) |
+| `architecture-tester` | opus | Architecture fitness tests, complexity, boundaries, trends |
 
 ### Model Tiering Strategy
 
