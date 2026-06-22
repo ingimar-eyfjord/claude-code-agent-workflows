@@ -122,6 +122,7 @@ Need to change code?
 | `design-reviewer` | sonnet | UI/UX, accessibility |
 | `product-strategy-advisor` | opus | Product strategy, build/kill/enhance |
 | `architecture-tester` | opus | Architecture fitness tests, trends |
+| `data-protection-officer` | opus | GDPR/privacy: ROPA, DPIA, retention, consent |
 
 ---
 

@@ -1,6 +1,6 @@
 # Claude Code Agents & Workflows
 
-A production-tested system of specialized agents, workflow skills, and enforcement hooks for Claude Code. Battle-tested on a real B2B SaaS product, distilled into 12 generic agents and 17 workflows you can drop into any project.
+A production-tested system of specialized agents, workflow skills, and enforcement hooks for Claude Code. Battle-tested on a real B2B SaaS product, distilled into 13 generic agents and 17 workflows you can drop into any project.
 
 ## Philosophy
 
@@ -16,7 +16,7 @@ Based on [Anthropic's agent-building guidance](https://docs.anthropic.com/en/doc
 
 ```
 .claude/
-  agents/           # 12 specialized agents (architect, backend, frontend, etc.)
+  agents/           # 13 specialized agents (architect, backend, frontend, etc.)
   skills/           # 17 workflow skills (see Workflow Ladder below)
   contexts/         # Context document pattern (README + template)
 CLAUDE.md           # Template project instructions
@@ -336,7 +336,7 @@ The cron job only fires while the session is idle. If you're talking to Claude, 
 
 ---
 
-## Agent Roster (12 agents)
+## Agent Roster (13 agents)
 
 | Agent | Model | Role |
 |-------|-------|------|
@@ -352,6 +352,7 @@ The cron job only fires while the session is idle. If you're talking to Claude, 
 | `design-reviewer` | sonnet | UI/UX review, accessibility, responsiveness |
 | `product-strategy-advisor` | opus | Product strategy, build/kill/enhance (ICE framework) |
 | `architecture-tester` | opus | Architecture fitness tests, complexity, boundaries, trends |
+| `data-protection-officer` | opus | GDPR/privacy: ROPA, DPIA, sub-processors, retention, consent |
 
 ### Model Tiering Strategy
 
@@ -411,6 +412,48 @@ Each context document contains:
 - Common gotchas and traps
 
 Agents read these documents before implementing. This is faster and cheaper than invoking a separate agent for domain knowledge.
+
+---
+
+## Compliance & Data Protection
+
+Two distinct concerns, two agents — don't conflate them:
+
+| Agent | Concern | Guards |
+|-------|---------|--------|
+| `security-reviewer` | **Application security** | OWASP, injection, auth bypass, secrets in code |
+| `data-protection-officer` | **Data governance** | GDPR Art. 5/30/35, ROPA, DPIA, sub-processors, retention, consent, special-category data |
+
+`security-reviewer` guards the *code*; `data-protection-officer` guards the *data and the legal basis for processing it*. Invoke the DPO when a change touches personal data, a new third-party processor, retention, or consent — it produces a review with findings and proposed clause text, but never edits policies or code directly (a human applies its recommendations).
+
+### PII Guard Hook
+
+`.claude/hooks/pii-guard.py` is a `PreToolUse` hook that **blocks** tool calls against designated sensitive paths (`.env`, dumps, exports, uploads, keys, named data exports) and appends every block to an audit log.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|NotebookEdit|Glob|Grep|Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/pii-guard.py" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The denylist at the top of the script is meant to be edited per project. Blocks are logged to `~/.claude/pii-guard.log` (override with `PII_GUARD_LOG`).
+
+**Be honest about what this is.** It's defense-in-depth and an audit trail — **not a guarantee**:
+
+- ✅ Reliably blocks reads of paths you name ahead of time (deterministic `PreToolUse` deny). Fires for sub-agent tool calls too.
+- ⚠️ Bash matching is best-effort — it catches commands that name a sensitive path, but shell indirection can route around it.
+- ❌ It can't find PII that lives somewhere you didn't list (inline in source, fixtures, logs, a new file), and any hook can be disabled (`disableAllHooks`).
+
+**The real control is data minimization** — keep real PII out of the working tree entirely: synthetic/anonymized dev data, prod data excluded from the repo, least-privilege credentials. The hook is the backstop, not the strategy. A documented "the agent can't read PII" that's actually leaky is worse than an honestly-scoped "blocks designated sensitive paths and logs the attempt" — overstated controls are what fail an audit.
 
 ---
 
