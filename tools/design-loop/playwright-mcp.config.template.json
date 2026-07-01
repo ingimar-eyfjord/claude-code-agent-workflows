@@ -1,0 +1,14 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": { "headless": false },
+    "contextOptions": { "viewport": { "width": {{VIEWPORT_W}}, "height": {{VIEWPORT_H}} } }
+  },
+  "capabilities": ["core"],
+  "network": { "allowedOrigins": {{ALLOWED_ORIGINS}} },
+  "codegen": "none",
+  "saveSession": true,
+  "outputDir": "./design-loop-reports/.playwright",
+  "imageResponses": "auto",
+  "testIdAttribute": "data-testid"
+}

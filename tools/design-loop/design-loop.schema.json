@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "design-loop.json",
+  "type": "object",
+  "required": ["baseUrl", "authMode", "viewports", "routes"],
+  "properties": {
+    "baseUrl": { "type": "string", "pattern": "^https?://" },
+    "authMode": { "enum": ["storage-state", "none"] },
+    "sessionMintCmd": { "type": "string" },
+    "pencilDesignFile": { "type": "string" },
+    "viewports": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^\\d{2,5}x\\d{2,5}$" } },
+    "routes": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["path"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^/" },
+          "label": { "type": "string" },
+          "waitFor": { "type": "string" }
+        }
+      }
+    }
+  }
+}

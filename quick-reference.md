@@ -21,6 +21,7 @@ Just researching?                -> /explore
 Sprint prep?                     -> /sprint-planning (tickets + Panel Todo)
 Architecture analysis?           -> /architect-review design | review
 Check if feature exists?         -> /preflight-check "description"
+Browser review (visual/runtime/design)? -> /design-loop (three-specialist report, no edits)
 Ready to push?                   -> /pre-push
 Documentation only?              -> /docs
 ```
@@ -80,6 +81,7 @@ Need to change code?
 | `/feature-design` | Read-only | No | Required (strategy+arch) | None |
 | `/code-sweep` | Any | Structural only | Required (reviewer+refactorer) | Panel Todo (behavioral) |
 | `/auto-dev` | Any | Yes | No | Ticket tracker (`auto-ok` label) |
+| `/design-loop` | Read-only | No | Required (3 specialists) | None |
 | `/pre-push` | Any (fix lint/tests) | Yes | No | None |
 | `/refactor` | Any | No | Required | Optional |
 | `/fix` | Any | No | Required | Optional |
@@ -161,6 +163,7 @@ Need to change code?
 /preflight-check "Tour stops with GPS"    # Check before building
 /explore                                  # Research only
 /docs                                     # Documentation changes
+/design-loop                              # Browser review: visual + runtime + design-conformance (report only)
 /pre-push                                 # Pre-push validation
 /auto-dev                                 # One autonomous cycle (pick + implement + commit)
 /loop 20m /auto-dev                       # Start autonomous loop (every 20 min)

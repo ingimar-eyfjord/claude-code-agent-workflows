@@ -349,7 +349,10 @@ The cron job only fires while the session is idle. If you're talking to Claude, 
 | `api-contract-guardian` | haiku | API contract verification (backend <-> frontend types) |
 | `security-reviewer` | opus | Security audit, OWASP, data protection |
 | `infra-ops` | opus | Docker, CI/CD, deployment |
-| `design-reviewer` | sonnet | UI/UX review, accessibility, responsiveness |
+| `design-reviewer` | sonnet | UI/UX review (deprecated — use `/design-loop`) |
+| `visual-reviewer` | sonnet | Layout, responsive, WCAG contrast, empty/error states (Design Loop) |
+| `runtime-diagnostician` | sonnet | Console, network, LCP/CLS/INP performance (Design Loop) |
+| `design-conformance` | sonnet | Pencil design intent vs rendered output, token drift (Design Loop) |
 | `product-strategy-advisor` | opus | Product strategy, build/kill/enhance (ICE framework) |
 | `architecture-tester` | opus | Architecture fitness tests, complexity, boundaries, trends |
 | `data-protection-officer` | opus | GDPR/privacy: ROPA, DPIA, sub-processors, retention, consent |
@@ -386,10 +389,72 @@ The workflow system integrates with these MCP servers:
 | **[Axon](https://github.com/QuantGeekDev/axon)** | Codebase knowledge graph (KuzuDB) for blast radius, dead code, cross-module analysis | `/architect-review` |
 | **[mcp-atlassian](https://github.com/sooperset/mcp-atlassian)** | Jira + Confluence integration for stories, sprints, documentation | `/sprint-planning`, `/dev`, `/fix` |
 | **[shadcn](https://github.com/nicholasgriffintn/shadcn-ui-mcp)** | UI component discovery and installation | `frontend-engineer` agent |
-| **[Playwright](https://github.com/nicholasgriffintn/playwright-mcp)** | Browser automation for visual design review | `design-reviewer` agent |
+| **[Playwright](https://github.com/nicholasgriffintn/playwright-mcp)** | Browser automation for visual review | `visual-reviewer`, `design-conformance` (Design Loop) |
+| **[Chrome DevTools MCP](https://github.com/nicholasgriffintn/chrome-devtools-mcp)** | Console, network, performance traces | `runtime-diagnostician` (Design Loop) |
 | **[Context7](https://github.com/nicholasgriffintn/context7-mcp)** | Library documentation lookup | `/explore` |
 
 All are optional — the workflow system degrades gracefully. Without Panel Todo, use `/code-review` instead of `/panel-review`. Without Axon, skip `/architect-review` and use `/feature-design` for pre-dev analysis. Without Jira, use Panel Todo alone for all tracking.
+
+---
+
+## Design Loop
+
+A portable, report-only browser review system that runs three specialist agents in parallel and produces one consolidated findings report. No agent edits code or design files — output is a report the human acts on.
+
+### The three specialists
+
+| Agent | MCP | What it sees |
+|---|---|---|
+| `visual-reviewer` | Playwright | Layout, responsive breakpoints, colour contrast (WCAG 2.1 AA), empty/error states, content grammar |
+| `runtime-diagnostician` | Chrome DevTools | Console errors, network failures/4xx/5xx, LCP/CLS/INP performance traces |
+| `design-conformance` | Pencil + Playwright | Design intent (tokens, spacing, hierarchy) vs rendered output; code health (magic numbers, token drift) |
+
+### The `/design-loop` skill
+
+Invoke `/design-loop` to orchestrate a run. The skill:
+1. Reads `.claude/design-loop.json` and validates it.
+2. Confirms `baseUrl` is reachable and both MCP servers are connected.
+3. Mints an auth session (if `authMode: storage-state`) — never navigates live SSO.
+4. Fans out to all three agents in parallel.
+5. Merges findings into a consolidated report at `./design-loop-reports/<date>-<slug>.md`.
+
+### Onboarding a project
+
+```
+# 1. Write the per-project config (see tools/design-loop/design-loop.schema.json):
+cat > .claude/design-loop.json <<'EOF'
+{
+  "baseUrl": "http://localhost:8000",
+  "authMode": "storage-state",
+  "sessionMintCmd": "<cmd that prints SESSIONID=<key>>",
+  "pencilDesignFile": "/path/to/Design.pen",
+  "viewports": ["1440x900", "375x812"],
+  "routes": [
+    { "path": "/your-route/", "label": "My Page", "waitFor": "body" }
+  ]
+}
+EOF
+
+# 2. Run setup (resolves + pins MCP versions, writes .mcp.json + .claude/playwright-mcp.config.json):
+node "/path/to/agents & workflows/tools/design-loop/setup.js"
+
+# 3. Enable the MCP servers: run /mcp in Claude Code and approve playwright + chrome-devtools
+
+# 4. Run the loop:
+/design-loop
+```
+
+`pencilDesignFile` is optional — `design-conformance` is skipped if omitted.
+
+### Canonical paths
+
+- Bootstrap tools: `agents & workflows/tools/design-loop/`
+- Agents (source of truth): `agents & workflows/.claude/agents/` → also installed globally to `~/.claude/agents/`
+- Skill: `agents & workflows/.claude/skills/design-loop/SKILL.md` → also at `~/.claude/skills/design-loop/`
+
+### Superseded agent
+
+`design-reviewer.md` is now a pointer stub — do not invoke it directly. `/design-loop` + the three specialists replace it entirely.
 
 ---
 
